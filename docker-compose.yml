@@ -18,4 +18,4 @@ services:
       - "8090:8090"
     volumes:
       - ./uploads:/app/uploads
-    command: ["python", "-m", "xianyu_agent.web"]
+    entrypoint: ["python", "-m", "xianyu_agent.web"]
