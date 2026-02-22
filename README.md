@@ -27,7 +27,7 @@ python -m playwright install chromium
 python -m xianyu_agent.cli "iPhone 15" --max-items 10
 ```
 
-## Docker 快速开始
+## Docker / Docker Compose 快速开始
 
 ### 1) 构建镜像
 
@@ -42,6 +42,18 @@ docker run --rm xianyu-agent:latest "iPhone 15" --max-items 10
 ```
 
 > 镜像默认入口为 `python -m xianyu_agent.cli`，因此 `docker run` 后追加的参数会直接传给 CLI。
+
+### 3) 使用 Docker Compose 运行
+
+```bash
+# 使用默认参数（KEYWORD=iPhone 15, MAX_ITEMS=10）
+docker compose up --build
+
+# 自定义关键词与抓取数量
+KEYWORD="MacBook Pro" MAX_ITEMS=5 docker compose up --build
+```
+
+`docker-compose.yml` 会读取环境变量 `KEYWORD` 和 `MAX_ITEMS`，并传递给 CLI。
 
 示例输出：
 
@@ -66,6 +78,7 @@ docker run --rm xianyu-agent:latest "iPhone 15" --max-items 10
 - `xianyu_agent/cli.py`：命令行入口
 - `tests/test_parsers.py`：解析逻辑测试
 - `Dockerfile`：容器化运行定义
+- `docker-compose.yml`：Compose 编排配置
 
 ## 注意事项（实战建议）
 

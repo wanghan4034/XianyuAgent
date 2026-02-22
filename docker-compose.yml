@@ -1,0 +1,10 @@
+services:
+  xianyu-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: xianyu-agent:latest
+    environment:
+      KEYWORD: ${KEYWORD:-iPhone 15}
+      MAX_ITEMS: ${MAX_ITEMS:-10}
+    command: ["sh", "-c", "python -m xianyu_agent.cli \"$${KEYWORD}\" --max-items $${MAX_ITEMS}"]
