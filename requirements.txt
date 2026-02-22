@@ -1,2 +1,3 @@
-# Runtime dependency
+# Runtime dependencies
 playwright>=1.49.0
+flask>=3.0.0

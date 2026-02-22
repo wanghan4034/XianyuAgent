@@ -10,6 +10,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY xianyu_agent ./xianyu_agent
 COPY README.md ./README.md
+RUN mkdir -p /app/uploads
 
 ENTRYPOINT ["python", "-m", "xianyu_agent.cli"]
 CMD ["iPhone 15", "--max-items", "10"]
