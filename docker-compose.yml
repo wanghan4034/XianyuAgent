@@ -15,7 +15,7 @@ services:
       dockerfile: Dockerfile
     image: xianyu-agent:latest
     ports:
-      - "8080:8080"
+      - "8090:8090"
     volumes:
       - ./uploads:/app/uploads
     command: ["python", "-m", "xianyu_agent.web"]

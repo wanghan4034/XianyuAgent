@@ -41,7 +41,7 @@ python -m xianyu_agent.cli --image /path/to/item.jpg --max-items 10
 python -m xianyu_agent.web
 ```
 
-浏览器访问：`http://127.0.0.1:8080`，直接上传图片查询。
+浏览器访问：`http://127.0.0.1:8090`，直接上传图片查询。
 
 ## Docker / Docker Compose 快速开始
 
@@ -73,7 +73,7 @@ KEYWORD="MacBook Pro" MAX_ITEMS=5 docker compose up --build xianyu-agent
 docker compose up --build xianyu-web
 ```
 
-打开：`http://127.0.0.1:8080`
+打开：`http://127.0.0.1:8090`
 
 > `docker-compose.yml` 中 `xianyu-web` 将 `./uploads` 挂载到容器 `/app/uploads`，用于保存上传图片。
 
