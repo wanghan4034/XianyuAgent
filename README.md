@@ -10,8 +10,9 @@
 - 输出结构化字段：标题、价格、地区、链接、卖家、商品ID
 - 优先解析 Next.js 内嵌 JSON，失败时回退到 DOM 解析
 - 提供命令行工具，方便快速调用
+- 支持 Docker 一键运行
 
-## 快速开始
+## 本地快速开始
 
 ### 1) 安装依赖
 
@@ -25,6 +26,22 @@ python -m playwright install chromium
 ```bash
 python -m xianyu_agent.cli "iPhone 15" --max-items 10
 ```
+
+## Docker 快速开始
+
+### 1) 构建镜像
+
+```bash
+docker build -t xianyu-agent:latest .
+```
+
+### 2) 运行容器（直接传递关键词和参数）
+
+```bash
+docker run --rm xianyu-agent:latest "iPhone 15" --max-items 10
+```
+
+> 镜像默认入口为 `python -m xianyu_agent.cli`，因此 `docker run` 后追加的参数会直接传给 CLI。
 
 示例输出：
 
@@ -48,6 +65,7 @@ python -m xianyu_agent.cli "iPhone 15" --max-items 10
 - `xianyu_agent/models.py`：数据模型
 - `xianyu_agent/cli.py`：命令行入口
 - `tests/test_parsers.py`：解析逻辑测试
+- `Dockerfile`：容器化运行定义
 
 ## 注意事项（实战建议）
 
