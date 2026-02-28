@@ -9,6 +9,7 @@ IMAGE_SEARCH_TEXT_HINTS = (
     "图片搜索",
     "搜同款",
     "图搜",
+    "相机",
 )
 
 

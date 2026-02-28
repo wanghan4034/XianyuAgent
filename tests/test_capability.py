@@ -13,3 +13,10 @@ def test_detect_image_search_support_with_text_hint() -> None:
     result = detect_image_search_support_from_html(html)
     assert "以图搜" in result["matched_text_hints"]
     assert result["supported"] is True
+
+
+def test_detect_image_search_support_with_camera_hint() -> None:
+    html = '<html><body><span>相机</span></body></html>'
+    result = detect_image_search_support_from_html(html)
+    assert "相机" in result["matched_text_hints"]
+    assert result["supported"] is True
