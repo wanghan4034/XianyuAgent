@@ -5,7 +5,7 @@ from flask import Flask, jsonify, render_template, request
 from werkzeug.utils import secure_filename
 
 from .agent import XianyuAgent
-from .service import summarize_prices
+from .service import build_market_report, summarize_prices
 from .web_utils import ALLOWED_EXTENSIONS, is_allowed_image, parse_max_items
 
 
@@ -47,6 +47,7 @@ def create_app() -> Flask:
         return jsonify(
             {
                 "summary": summarize_prices(products),
+                "report": build_market_report(products),
                 "items": [item.to_dict() for item in products],
             }
         )
@@ -79,6 +80,7 @@ def create_app() -> Flask:
         return jsonify(
             {
                 "summary": summarize_prices(products),
+                "report": build_market_report(products),
                 "items": [item.to_dict() for item in products],
             }
         )
