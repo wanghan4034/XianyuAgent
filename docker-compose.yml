@@ -1,0 +1,21 @@
+services:
+  xianyu-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: xianyu-agent:latest
+    environment:
+      KEYWORD: ${KEYWORD:-iPhone 15}
+      MAX_ITEMS: ${MAX_ITEMS:-10}
+    command: ["${KEYWORD:-iPhone 15}", "--max-items", "${MAX_ITEMS:-10}"]
+
+  xianyu-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: xianyu-agent:latest
+    ports:
+      - "8090:8090"
+    volumes:
+      - ./uploads:/app/uploads
+    entrypoint: ["python", "-m", "xianyu_agent.web"]

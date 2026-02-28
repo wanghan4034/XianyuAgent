@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>闲鱼估价工作台</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif; background:#f3f6fb; color:#1f2937; }
+    .container { max-width: 1120px; margin: 24px auto; padding: 0 16px; }
+    .hero { background: linear-gradient(120deg,#0ea5e9,#4f46e5); color:#fff; border-radius:16px; padding:22px; }
+    .hero h1 { margin:0 0 8px; }
+    .grid { display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:16px; }
+    .card { background:#fff; border:1px solid #e5e7eb; border-radius:14px; padding:14px; }
+    .tabs { display:flex; gap:8px; margin-bottom:10px; }
+    .tab { border:1px solid #d1d5db; background:#fff; border-radius:999px; padding:8px 12px; cursor:pointer; }
+    .tab.active { background:#2563eb; border-color:#2563eb; color:#fff; }
+    .row { margin-bottom:10px; }
+    label { display:block; font-size:13px; color:#6b7280; margin-bottom:4px; }
+    input[type="text"], input[type="number"], input[type="file"] { width:100%; border:1px solid #d1d5db; border-radius:10px; padding:10px; }
+    .dropzone { border:2px dashed #93c5fd; background:#eff6ff; color:#1e40af; border-radius:10px; padding:12px; text-align:center; margin-bottom:8px; }
+    .preview { max-width:100%; border-radius:10px; border:1px solid #e5e7eb; display:none; }
+    .actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+    button { border:none; border-radius:10px; padding:10px 12px; color:#fff; background:#2563eb; cursor:pointer; }
+    button.secondary { background:#0f766e; }
+    button.ghost { background:#e5e7eb; color:#111827; }
+    .summary { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:10px; }
+    .metric { border:1px solid #e5e7eb; background:#f9fafb; border-radius:10px; padding:10px; }
+    .metric .k { font-size:12px; color:#6b7280; }
+    .metric .v { font-weight:700; margin-top:4px; }
+    .insight { border-left:4px solid #2563eb; background:#eff6ff; padding:10px; border-radius:8px; margin-bottom:10px; }
+    .comps { width:100%; border-collapse:collapse; font-size:13px; }
+    .comps th, .comps td { border-bottom:1px solid #e5e7eb; padding:8px; text-align:left; }
+    .json { margin-top:10px; background:#0f172a; color:#cbd5e1; border-radius:10px; padding:10px; max-height:220px; overflow:auto; font-size:12px; }
+    .status { color:#6b7280; font-size:13px; margin-top:8px; }
+    @media (max-width: 900px){ .grid{grid-template-columns:1fr;} .summary{grid-template-columns:repeat(2,1fr);} }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="hero">
+    <h1>闲鱼估价工作台</h1>
+    <div>目标：针对客户送来的实际物品，快速查看闲鱼售卖行情，并给出建议定价区间。</div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="tabs">
+        <button class="tab active" data-mode="image">按图片估价</button>
+        <button class="tab" data-mode="keyword">按关键词估价</button>
+      </div>
+      <div id="imagePanel">
+        <div id="dropzone" class="dropzone">拖拽图片到这里，或点击下方选择文件</div>
+        <input id="image" type="file" accept="image/*" />
+        <img id="preview" class="preview" alt="图片预览" />
+      </div>
+      <div id="keywordPanel" style="display:none;">
+        <div class="row"><label for="keyword">关键词</label><input id="keyword" type="text" placeholder="如：iPhone 15 256G 国行" /></div>
+      </div>
+      <div class="row"><label for="maxItems">样本数量（1-100）</label><input id="maxItems" type="number" value="20" min="1" max="100" /></div>
+      <div class="actions">
+        <button id="submit">开始估价</button>
+        <button class="secondary" id="probe">检测网页是否支持以图搜</button>
+        <button class="ghost" id="download">下载报告 JSON</button>
+      </div>
+      <div class="status" id="status">就绪</div>
+    </div>
+
+    <div class="card">
+      <div class="summary">
+        <div class="metric"><div class="k">样本数</div><div class="v" id="mCount">-</div></div>
+        <div class="metric"><div class="k">建议低价</div><div class="v" id="mBandLow">-</div></div>
+        <div class="metric"><div class="k">建议高价</div><div class="v" id="mBandHigh">-</div></div>
+        <div class="metric"><div class="k">中位价</div><div class="v" id="mMedian">-</div></div>
+      </div>
+      <div id="insight" class="insight">暂无估价结论。</div>
+      <table class="comps">
+        <thead><tr><th>标题</th><th>价格</th><th>地区</th></tr></thead>
+        <tbody id="compsBody"><tr><td colspan="3">暂无可比商品</td></tr></tbody>
+      </table>
+      <pre id="result" class="json">尚未查询</pre>
+    </div>
+  </div>
+</div>
+
+<script>
+  const tabs = [...document.querySelectorAll('.tab')];
+  const imagePanel = document.getElementById('imagePanel');
+  const keywordPanel = document.getElementById('keywordPanel');
+  const imageInput = document.getElementById('image');
+  const keywordInput = document.getElementById('keyword');
+  const maxItemsInput = document.getElementById('maxItems');
+  const preview = document.getElementById('preview');
+  const dropzone = document.getElementById('dropzone');
+  const statusEl = document.getElementById('status');
+  const output = document.getElementById('result');
+  const compsBody = document.getElementById('compsBody');
+  const insightEl = document.getElementById('insight');
+  const mCount = document.getElementById('mCount');
+  const mBandLow = document.getElementById('mBandLow');
+  const mBandHigh = document.getElementById('mBandHigh');
+  const mMedian = document.getElementById('mMedian');
+
+  let mode = 'image';
+  let latestResult = null;
+
+  const setStatus = (t) => statusEl.textContent = t;
+  const fmt = (v) => (v === null || v === undefined ? '-' : `${v}`);
+
+  function renderComparables(items = []) {
+    const top = items.slice(0, 6);
+    if (!top.length) {
+      compsBody.innerHTML = '<tr><td colspan="3">暂无可比商品</td></tr>';
+      return;
+    }
+    compsBody.innerHTML = top.map(item =>
+      `<tr><td>${item.title || '-'}</td><td>${fmt(item.price)}</td><td>${item.location || '-'}</td></tr>`
+    ).join('');
+  }
+
+  function renderData(data) {
+    latestResult = data;
+    output.textContent = JSON.stringify(data, null, 2);
+
+    const report = data.report || {};
+    const summary = report.price_summary || data.summary || {};
+    const band = report.price_band || {};
+
+    mCount.textContent = fmt(summary.count);
+    mMedian.textContent = fmt(summary.median_price);
+    mBandLow.textContent = fmt(band.low);
+    mBandHigh.textContent = fmt(band.high);
+    insightEl.textContent = report.insight || data.error || '暂无估价结论。';
+
+    renderComparables(data.items || []);
+  }
+
+  tabs.forEach(tab => tab.onclick = () => {
+    tabs.forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    mode = tab.dataset.mode;
+    imagePanel.style.display = mode === 'image' ? 'block' : 'none';
+    keywordPanel.style.display = mode === 'keyword' ? 'block' : 'none';
+  });
+
+  imageInput.onchange = () => {
+    const file = imageInput.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => { preview.src = reader.result; preview.style.display = 'block'; };
+    reader.readAsDataURL(file);
+  };
+
+  dropzone.ondragover = (e) => { e.preventDefault(); dropzone.style.background = '#dbeafe'; };
+  dropzone.ondragleave = () => { dropzone.style.background = '#eff6ff'; };
+  dropzone.ondrop = (e) => {
+    e.preventDefault();
+    dropzone.style.background = '#eff6ff';
+    if (!e.dataTransfer.files?.length) return;
+    imageInput.files = e.dataTransfer.files;
+    imageInput.dispatchEvent(new Event('change'));
+  };
+
+  async function runSearch() {
+    setStatus('处理中，请稍候...');
+    try {
+      if (mode === 'image') {
+        if (!imageInput.files.length) return renderData({ error: '请先选择图片' });
+        const formData = new FormData();
+        formData.append('image', imageInput.files[0]);
+        formData.append('max_items', maxItemsInput.value || '20');
+        const res = await fetch('/api/search-by-image', { method: 'POST', body: formData });
+        renderData(await res.json());
+      } else {
+        const keyword = keywordInput.value.trim();
+        if (!keyword) return renderData({ error: '请输入关键词' });
+        const res = await fetch('/api/search-by-keyword', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ keyword, max_items: maxItemsInput.value || '20' }),
+        });
+        renderData(await res.json());
+      }
+      setStatus('完成');
+    } catch (err) {
+      renderData({ error: `请求失败: ${err}` });
+      setStatus('请求失败');
+    }
+  }
+
+  document.getElementById('submit').onclick = runSearch;
+  document.getElementById('probe').onclick = async () => {
+    setStatus('探测中...');
+    try {
+      const res = await fetch('/api/capability');
+      renderData(await res.json());
+      setStatus('探测完成');
+    } catch (err) {
+      renderData({ error: `能力探测失败: ${err}` });
+      setStatus('探测失败');
+    }
+  };
+  document.getElementById('download').onclick = () => {
+    if (!latestResult) return setStatus('暂无报告可下载');
+    const blob = new Blob([JSON.stringify(latestResult, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `xianyu-market-report-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setStatus('已下载报告');
+  };
+</script>
+</body>
+</html>
