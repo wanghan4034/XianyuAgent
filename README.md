@@ -35,6 +35,13 @@ python -m xianyu_agent.cli "iPhone 15" --max-items 10
 python -m xianyu_agent.cli --image /path/to/item.jpg --max-items 10
 ```
 
+
+网页端能力探测（是否支持以图搜入口）：
+
+```bash
+python -m xianyu_agent.cli --check-image-search
+```
+
 ### 3) 启动 Web 页面
 
 ```bash

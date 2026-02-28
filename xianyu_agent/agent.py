@@ -1,7 +1,8 @@
 from pathlib import Path
-from typing import List
+from typing import Dict, List
 from urllib.parse import quote
 
+from .capability import detect_image_search_support_from_html
 from .models import Product
 from .parsers import extract_next_data, extract_products_from_dom, extract_products_from_next_data
 
@@ -15,6 +16,30 @@ class XianyuAgent:
         next_data = extract_next_data(html)
         products = extract_products_from_next_data(next_data, max_items=max_items)
         return products or extract_products_from_dom(html, max_items=max_items)
+
+    def _load_goofish_homepage_html(self) -> str:
+        try:
+            from playwright.sync_api import sync_playwright
+        except ModuleNotFoundError as exc:
+            raise RuntimeError(
+                "缺少 playwright 依赖，请先执行: pip install playwright && python -m playwright install chromium"
+            ) from exc
+
+        with sync_playwright() as pw:
+            browser = pw.chromium.launch(headless=self.headless)
+            context = browser.new_context()
+            page = context.new_page()
+            page.goto("https://www.goofish.com/", wait_until="domcontentloaded", timeout=self.timeout_ms)
+            page.wait_for_timeout(1200)
+            html = page.content()
+            browser.close()
+        return html
+
+    def probe_image_search_support(self) -> Dict[str, object]:
+        html = self._load_goofish_homepage_html()
+        result = detect_image_search_support_from_html(html)
+        result["site"] = "https://www.goofish.com/"
+        return result
 
     def crawl_keyword(self, keyword: str, max_items: int = 20) -> List[Product]:
         try:
@@ -71,14 +96,18 @@ class XianyuAgent:
                     break
 
             if not file_input_found:
+                html = page.content()
                 browser.close()
-                raise RuntimeError("未在页面找到图片上传控件，请先确认当前闲鱼网页支持以图搜。")
+                support_result = detect_image_search_support_from_html(html)
+                raise RuntimeError(
+                    "未在页面找到图片上传控件，请先确认当前闲鱼网页支持以图搜。"
+                    f" 检测结果: {support_result}"
+                )
 
             try:
                 page.wait_for_load_state("networkidle", timeout=self.timeout_ms)
                 page.wait_for_timeout(2500)
             except PlaywrightTimeoutError:
-                # continue with whatever page content is available
                 pass
 
             html = page.content()
